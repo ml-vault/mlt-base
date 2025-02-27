@@ -4,6 +4,7 @@ source /opt/ai-dock/etc/environment.sh
 
 build_common_main() {
     build_common_install_api
+    build_common_install_infinite_browser
 }
 
 build_common_install_api() {
@@ -12,6 +13,12 @@ build_common_install_api() {
     $API_VENV_PIP install --no-cache-dir \
         -r /opt/ai-dock/api-wrapper/requirements.txt
 
+}
+
+build_common_install_infinite_browser() {
+    git clone https://github.com/zanllp/sd-webui-infinite-image-browsing.git /opt/ai-dock/infinite-browser
+    $INFINITE_BROWSER_VENV_PIP install --no-cache-dir \
+        -r /opt/ai-dock/infinite-browser/requirements.txt
 }
 
 build_common_install_comfyui() {
