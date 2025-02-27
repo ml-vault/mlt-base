@@ -34,6 +34,15 @@ build_common_create_venv() {
     "$API_VENV_PYTHON" -m ipykernel install \
         --name="api-wrapper" \
         --display-name="Python${PYTHON_VERSION} (api-wrapper)"
+
+    # Infinite Browser venv
+    "python${PYTHON_VERSION}" -m venv "$INFINITE_BROWSER_VENV"
+    "$INFINITE_BROWSER_VENV_PIP" install --no-cache-dir \
+        ipykernel \
+        ipywidgets
+    "$INFINITE_BROWSER_VENV_PYTHON" -m ipykernel install \
+        --name="infinite-browser" \
+        --display-name="Python${PYTHON_VERSION} (infinite-browser)"
 }
 
 
