@@ -23,7 +23,7 @@ function start() {
     cd /opt/ai-dock/infinite-browser && \
     source "$INFINITE_BROWSER_VENV/bin/activate"
     uvicorn main:app \
-        --host 127.0.0.1 \
+        --host 0.0.0.0 \
         --port $LISTEN_PORT \
         --reload
 }
