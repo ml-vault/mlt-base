@@ -15,7 +15,7 @@ build_common_install_api() {
         -r /opt/ai-dock/api-wrapper/requirements.txt
 
 }
-install_filemanager()
+build_common_install_filebrowser()
 {
 	trap 'echo -e "Aborted, error $? in command: $BASH_COMMAND"; trap ERR; return 1' ERR
 	filemanager_os="unsupported"
@@ -133,12 +133,6 @@ install_filemanager()
 		trap ERR
 		return 1
 	fi
-}
-
-
-build_common_install_filebrowser() {
-    curl -fsSL https://raw.githubusercontent.com/filebrowser/get/master/get.sh | bash
-    filebrowser -r /opt/ai-dock/filebrowser
 }
 
 build_common_install_infinite_browser() {
