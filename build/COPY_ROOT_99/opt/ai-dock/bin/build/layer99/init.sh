@@ -13,6 +13,7 @@ APT_PACKAGES=(
 # Packages are installed after nodes so we can fix them...
 PIP_PACKAGES=(
     "opencv-python==4.7.0.72"
+    "sageattention"
 )
 
 NODES=(
