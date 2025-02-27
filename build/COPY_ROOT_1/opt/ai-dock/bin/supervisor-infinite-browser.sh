@@ -13,7 +13,7 @@ function cleanup() {
 
 function start() {
     source /opt/ai-dock/etc/environment.sh
-    source /opt/ai-dock/bin/venv-set.sh infinite-browser
+    source /opt/ai-dock/bin/venv-set.sh ibrowser
 
     printf "Starting %s...\n" ${SERVICE_NAME}
     
