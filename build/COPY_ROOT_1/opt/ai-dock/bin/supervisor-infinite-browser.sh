@@ -22,10 +22,7 @@ function start() {
 
     cd /opt/ai-dock/infinite-browser && \
     source "$INFINITE_BROWSER_VENV/bin/activate"
-    uvicorn main:app \
-        --host 0.0.0.0 \
-        --port $LISTEN_PORT \
-        --reload
+    python /opt/ai-dock/infinite-browser/app.py --listen 0.0.0.0 --port $LISTEN_PORT
 }
 
 start 2>&1
