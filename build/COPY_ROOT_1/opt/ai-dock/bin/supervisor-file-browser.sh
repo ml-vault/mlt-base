@@ -12,7 +12,7 @@ function cleanup() {
 }
 
 function start() {
-    source /opt/ai-dock/filebrowser/filebrowser --port $LISTEN_PORT --address 0.0.0.0 -r /workspace -d /workspace/filebrowser.db
+    filebrowser --port $LISTEN_PORT --address 0.0.0.0 -r /workspace -d /workspace/filebrowser.db
 }
 
 start 2>&1
