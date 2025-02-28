@@ -21,7 +21,6 @@ build_common_install_filebrowser()
 	filemanager_os="unsupported"
 	filemanager_arch="unknown"
 	install_path="/opt/ai-dock/filebrowser"
-	mkdir -p $install_path
 
 	# Termux on Android has $PREFIX set which already ends with /usr
 	if [[ -n "$ANDROID_ROOT" && -n "$PREFIX" ]]; then
