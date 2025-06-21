@@ -165,4 +165,8 @@ function build_extra_download() {
 umask 002
 
 build_extra_start
+
+# TensorBoardスクリプトに実行権限を付与
+chmod +x /opt/ai-dock/bin/supervisor-tensorboard.sh
+
 fix-permissions.sh -o container

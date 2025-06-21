@@ -6,6 +6,7 @@ build_common_main() {
     build_common_install_api
     build_common_install_infinite_browser
     build_common_install_filebrowser
+    build_common_install_tensorboard
 }
 
 build_common_install_api() {
@@ -164,6 +165,11 @@ build_common_run_tests() {
         echo "Expected PyTorch ${PYTORCH_VERSION} but found ${installed_pytorch_version}\n"
         exit 1
     fi
+}
+
+build_common_install_tensorboard() {
+    # TensorBoardをComfyUI仮想環境にインストール
+    $COMFYUI_VENV_PIP install --no-cache-dir tensorboard
 }
 
 build_common_main "$@"
