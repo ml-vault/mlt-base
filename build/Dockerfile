@@ -66,44 +66,8 @@ EXPOSE 8888 6006 8080 8188
 # Supervisorの設定ディレクトリ作成
 RUN mkdir -p /etc/supervisor/conf.d
 
-# Supervisorの設定ファイル
-RUN echo '[supervisord]\n\
-nodaemon=true\n\
-user=root\n\
-\n\
-[program:jupyter]\n\
-command=jupyter lab --ip=0.0.0.0 --port=8888 --no-browser --allow-root --ServerApp.token="" --ServerApp.password="" --ServerApp.allow_origin="*"\n\
-directory=/workspace\n\
-autostart=true\n\
-autorestart=true\n\
-stdout_logfile=/var/log/jupyter.log\n\
-stderr_logfile=/var/log/jupyter.log\n\
-\n\
-[program:tensorboard]\n\
-command=tensorboard --logdir=/workspace/logs --host=0.0.0.0 --port=6006\n\
-directory=/workspace\n\
-autostart=true\n\
-autorestart=true\n\
-stdout_logfile=/var/log/tensorboard.log\n\
-stderr_logfile=/var/log/tensorboard.log\n\
-\n\
-[program:filebrowser]\n\
-command=filebrowser -a 0.0.0.0 -p 8080 -r /workspace\n\
-directory=/workspace\n\
-autostart=true\n\
-autorestart=true\n\
-stdout_logfile=/var/log/filebrowser.log\n\
-stderr_logfile=/var/log/filebrowser.log\n\
-\n\
-[program:infinite-browser]\n\
-command=python app.py --host=0.0.0.0 --port=8188\n\
-directory=/opt/infinite-browser\n\
-autostart=true\n\
-autorestart=true\n\
-stdout_logfile=/var/log/infinite-browser.log\n\
-stderr_logfile=/var/log/infinite-browser.log\n\
-\n\
-' > /etc/supervisor/conf.d/supervisord.conf
+# Supervisorの設定ファイルをコピー
+COPY supervisord.ini /etc/supervisor/conf.d/supervisord.ini
 
 # 環境変数の設定
 ENV WORKSPACE=/workspace
@@ -116,4 +80,4 @@ ENV INFINITE_BROWSER_PORT=8188
 RUN mkdir -p /workspace/logs
 
 # 起動コマンド
-CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.ini"]
