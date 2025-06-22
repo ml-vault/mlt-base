@@ -68,7 +68,7 @@ jobs:
             [ -z "$COMFYUI_BUILD_REF" ] && { echo "Error: COMFYUI_BUILD_REF is empty. Exiting script." >&2; exit 1; }
             echo "COMFYUI_BUILD_REF=${COMFYUI_BUILD_REF}" >> ${GITHUB_ENV}
 
-            base_tag="v2-cpu-${{ env.UBUNTU_VERSION }}"
+            base_tag="v3-cpu-${{ env.UBUNTU_VERSION }}"
 
             if [[ ${{ matrix.build.latest }} == "true" ]]; then
                 echo "Marking latest"
@@ -83,7 +83,7 @@ jobs:
         with:
           context: build
           build-args: |
-            IMAGE_BASE=ghcr.io/ai-dock/python:${{ matrix.build.python }}-v2-cpu-${{ env.UBUNTU_VERSION }}
+            IMAGE_BASE=ghcr.io/ai-dock/python:${{ matrix.build.python }}-v3-cpu-${{ env.UBUNTU_VERSION }}
             PYTHON_VERSION=${{ matrix.build.python }}
             PYTORCH_VERSION=${{ matrix.build.pytorch }}
             COMFYUI_BUILD_REF=${{ env.COMFYUI_BUILD_REF }}
@@ -152,7 +152,7 @@ jobs:
           [ -z "$COMFYUI_BUILD_REF" ] && { echo "Error: COMFYUI_BUILD_REF is empty. Exiting script." >&2; exit 1; }
           echo "COMFYUI_BUILD_REF=${COMFYUI_BUILD_REF}" >> ${GITHUB_ENV}
 
-          base_tag="v2-cuda-${{ matrix.build.cuda }}-${{ env.UBUNTU_VERSION }}"
+          base_tag="v3-cuda-${{ matrix.build.cuda }}-${{ env.UBUNTU_VERSION }}"
 
           if [[ ${{ matrix.build.latest }} == "true" ]]; then
                 echo "Marking latest"
@@ -174,7 +174,7 @@ jobs:
         with:
           context: build
           build-args: |
-            IMAGE_BASE=ghcr.io/ai-dock/python:${{ matrix.build.python }}-v2-cuda-${{ matrix.build.cuda }}-${{ env.UBUNTU_VERSION }}
+            IMAGE_BASE=ghcr.io/ai-dock/python:${{ matrix.build.python }}-v3-cuda-${{ matrix.build.cuda }}-${{ env.UBUNTU_VERSION }}
             PYTHON_VERSION=${{ matrix.build.python }}
             PYTORCH_VERSION=${{ matrix.build.pytorch }}
             COMFYUI_BUILD_REF=${{ env.COMFYUI_BUILD_REF }}
@@ -241,7 +241,7 @@ jobs:
             [ -z "$COMFYUI_BUILD_REF" ] && { echo "Error: COMFYUI_BUILD_REF is empty. Exiting script." >&2; exit 1; }
             echo "COMFYUI_BUILD_REF=${COMFYUI_BUILD_REF}" >> ${GITHUB_ENV}
 
-            base_tag="v2-rocm-${{ matrix.build.rocm }}-${{ env.UBUNTU_VERSION }}"
+            base_tag="v3-rocm-${{ matrix.build.rocm }}-${{ env.UBUNTU_VERSION }}"
 
             if [[ ${{ matrix.build.latest }} == "true" ]]; then
                 echo "Marking latest"
@@ -259,7 +259,7 @@ jobs:
         with:
           context: build
           build-args: |
-            IMAGE_BASE=ghcr.io/ai-dock/python:${{ matrix.build.python }}-v2-rocm-${{ matrix.build.rocm }}-${{ env.UBUNTU_VERSION }}
+            IMAGE_BASE=ghcr.io/ai-dock/python:${{ matrix.build.python }}-v3-rocm-${{ matrix.build.rocm }}-${{ env.UBUNTU_VERSION }}
             PYTHON_VERSION=${{ matrix.build.python }}
             PYTORCH_VERSION=${{ matrix.build.pytorch }}
             COMFYUI_BUILD_REF=${{ env.COMFYUI_BUILD_REF }}

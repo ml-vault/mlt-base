@@ -3,10 +3,12 @@
 source /opt/ai-dock/etc/environment.sh
 
 build_common_main() {
+    build_common_install_comfyui
     build_common_install_api
     build_common_install_infinite_browser
     build_common_install_filebrowser
     build_common_install_tensorboard
+    build_common_install_conda_packages
 }
 
 build_common_install_api() {
@@ -155,8 +157,33 @@ build_common_install_comfyui() {
     cd /opt/ComfyUI
     git checkout "$COMFYUI_BUILD_REF"
 
+    # Install in traditional venv
     $COMFYUI_VENV_PIP install --no-cache-dir \
         -r requirements.txt
+}
+
+build_common_install_conda_packages() {
+    # Initialize conda
+    export PATH="/opt/miniconda/bin:$PATH"
+    source /opt/miniconda/etc/profile.d/conda.sh
+    
+    # Install ComfyUI dependencies in conda environment
+    conda activate comfyui
+    cd /opt/ComfyUI
+    pip install --no-cache-dir -r requirements.txt
+    conda deactivate
+    
+    # Install API wrapper dependencies in conda environment
+    conda activate api
+    pip install --no-cache-dir -r /opt/ai-dock/api-wrapper/requirements.txt
+    conda deactivate
+    
+    # Install infinite browser dependencies in conda environment
+    conda activate infinite-browser
+    pip install --no-cache-dir -r /opt/ai-dock/infinite-browser/requirements.txt
+    conda deactivate
+    
+    echo "Conda environments setup completed"
 }
 
 build_common_run_tests() {

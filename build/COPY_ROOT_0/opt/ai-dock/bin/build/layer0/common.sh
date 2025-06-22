@@ -3,7 +3,28 @@
 source /opt/ai-dock/etc/environment.sh
 
 build_common_main() {
+    build_common_install_conda
     build_common_create_venv
+}
+
+build_common_install_conda() {
+    # Install Miniconda
+    cd /tmp
+    wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
+    bash miniconda.sh -b -p /opt/miniconda
+    rm miniconda.sh
+    
+    # Add conda to PATH
+    echo 'export PATH="/opt/miniconda/bin:$PATH"' >> /etc/environment
+    export PATH="/opt/miniconda/bin:$PATH"
+    
+    # Initialize conda
+    /opt/miniconda/bin/conda init bash
+    
+    # Create conda environment for ComfyUI
+    /opt/miniconda/bin/conda create -n comfyui python=${PYTHON_VERSION} -y
+    /opt/miniconda/bin/conda create -n api python=${PYTHON_VERSION} -y
+    /opt/miniconda/bin/conda create -n infinite-browser python=${PYTHON_VERSION} -y
 }
 
 build_common_create_venv() {

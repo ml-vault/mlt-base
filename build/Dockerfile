@@ -7,6 +7,11 @@ LABEL org.opencontainers.image.source https://github.com/mlvault/comfyui
 LABEL org.opencontainers.image.description "ComfyUI Stable Diffusion backend and GUI"
 LABEL maintainer="Yoonsoo Kim <laptise@live.jp>"
 
+# Conda environment paths
+ENV CONDA_DIR=/opt/miniconda
+ENV PATH=$CONDA_DIR/bin:$PATH
+
+# Traditional venv paths (kept for compatibility)
 ENV COMFYUI_VENV=$VENV_DIR/comfyui
 ENV COMFYUI_VENV_PYTHON=$COMFYUI_VENV/bin/python
 ENV COMFYUI_VENV_PIP=$COMFYUI_VENV/bin/pip
@@ -18,6 +23,11 @@ ENV API_VENV_PIP=$API_VENV/bin/pip
 ENV INFINITE_BROWSER_VENV=$VENV_DIR/ibrowser
 ENV INFINITE_BROWSER_VENV_PYTHON=$INFINITE_BROWSER_VENV/bin/python
 ENV INFINITE_BROWSER_VENV_PIP=$INFINITE_BROWSER_VENV/bin/pip
+
+# Conda environment paths
+ENV COMFYUI_CONDA_ENV=comfyui
+ENV API_CONDA_ENV=api
+ENV INFINITE_BROWSER_CONDA_ENV=infinite-browser
 
 ENV IMAGE_SLUG="comfyui"
 ENV OPT_SYNC=ComfyUI
