@@ -73,12 +73,33 @@ if conda env list | grep -q "^$CONDA_ENV_NAME "; then
     
     # 既存環境をアクティベート（sourceコマンドを使用）
     echo "Activating existing conda environment '$CONDA_ENV_NAME'..."
+    echo "Debug: Using source command: source $CONDA_DIR/bin/activate $CONDA_ENV_NAME"
+    
+    # activateスクリプトの存在確認
+    if [ -f "$CONDA_DIR/bin/activate" ]; then
+        echo "✓ Activate script found at $CONDA_DIR/bin/activate"
+    else
+        echo "❌ Activate script not found at $CONDA_DIR/bin/activate"
+        ls -la "$CONDA_DIR/bin/" | grep activate || echo "No activate scripts found"
+    fi
+    
     source "$CONDA_DIR/bin/activate" "$CONDA_ENV_NAME"
-    if [ $? -eq 0 ]; then
+    ACTIVATE_RESULT=$?
+    echo "Debug: Activation result code: $ACTIVATE_RESULT"
+    
+    if [ $ACTIVATE_RESULT -eq 0 ]; then
         echo "✓ Conda environment '$CONDA_ENV_NAME' activated."
+        echo "Debug: Current CONDA_DEFAULT_ENV: ${CONDA_DEFAULT_ENV:-'not set'}"
+        echo "Debug: Current PATH: $PATH"
     else
         echo "❌ Failed to activate conda environment."
-        exit 1
+        echo "Debug: Trying alternative activation method..."
+        
+        # 代替方法: 環境変数を直接設定
+        export CONDA_DEFAULT_ENV="$CONDA_ENV_NAME"
+        export CONDA_PREFIX="$CONDA_DIR/envs/$CONDA_ENV_NAME"
+        export PATH="$CONDA_PREFIX/bin:$PATH"
+        echo "✓ Environment variables set manually."
     fi
 else
     echo "Creating conda environment '$CONDA_ENV_NAME' with Python 3.11..."
@@ -89,12 +110,33 @@ else
         
         # conda環境をアクティベート（sourceコマンドを使用）
         echo "Activating conda environment '$CONDA_ENV_NAME'..."
+        echo "Debug: Using source command: source $CONDA_DIR/bin/activate $CONDA_ENV_NAME"
+        
+        # activateスクリプトの存在確認
+        if [ -f "$CONDA_DIR/bin/activate" ]; then
+            echo "✓ Activate script found at $CONDA_DIR/bin/activate"
+        else
+            echo "❌ Activate script not found at $CONDA_DIR/bin/activate"
+            ls -la "$CONDA_DIR/bin/" | grep activate || echo "No activate scripts found"
+        fi
+        
         source "$CONDA_DIR/bin/activate" "$CONDA_ENV_NAME"
-        if [ $? -eq 0 ]; then
+        ACTIVATE_RESULT=$?
+        echo "Debug: Activation result code: $ACTIVATE_RESULT"
+        
+        if [ $ACTIVATE_RESULT -eq 0 ]; then
             echo "✓ Conda environment '$CONDA_ENV_NAME' activated."
+            echo "Debug: Current CONDA_DEFAULT_ENV: ${CONDA_DEFAULT_ENV:-'not set'}"
+            echo "Debug: Current PATH: $PATH"
         else
             echo "❌ Failed to activate conda environment."
-            exit 1
+            echo "Debug: Trying alternative activation method..."
+            
+            # 代替方法: 環境変数を直接設定
+            export CONDA_DEFAULT_ENV="$CONDA_ENV_NAME"
+            export CONDA_PREFIX="$CONDA_DIR/envs/$CONDA_ENV_NAME"
+            export PATH="$CONDA_PREFIX/bin:$PATH"
+            echo "✓ Environment variables set manually."
         fi
         
         # 必要なパッケージをインストール
