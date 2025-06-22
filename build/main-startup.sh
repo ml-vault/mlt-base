@@ -107,7 +107,17 @@ if conda env list | grep -q "^$CONDA_ENV_NAME "; then
     if pip list | grep -q "^flash-attn "; then
         echo "✓ flash-attn is already installed."
     else
-        echo "Installing flash-attn in existing environment..."
+        echo "Installing dependencies for flash-attn in existing environment..."
+        
+        # PyTorchがインストールされているかチェック
+        if ! pip list | grep -q "^torch "; then
+            echo "Installing PyTorch with CUDA support..."
+            pip install --no-cache-dir torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
+        else
+            echo "✓ PyTorch is already installed."
+        fi
+        
+        echo "Installing flash-attn..."
         pip install --no-cache-dir flash-attn --no-build-isolation
         
         if [ $? -eq 0 ]; then
@@ -168,6 +178,10 @@ else
             scikit-learn \
             plotly \
             tensorboard
+        
+        # PyTorchのインストール（CUDA対応版）
+        echo "Installing PyTorch with CUDA support..."
+        pip install --no-cache-dir torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
         
         # flash-attnのインストール（GPU環境用）
         echo "Installing flash-attn for GPU acceleration..."
