@@ -182,9 +182,10 @@ fi
 
 echo "✓ Supervisor configuration file found."
 
-# 設定ファイルの構文チェック
+# 設定ファイルの構文チェック（テストモードで実行）
 echo "Validating Supervisor configuration..."
-if /usr/bin/supervisord -c "$SUPERVISOR_CONFIG" -t; then
+# -tオプションは設定テストのみで実際の起動は行わない
+if /usr/bin/supervisord -c "$SUPERVISOR_CONFIG" -t 2>/dev/null; then
     echo "✓ Supervisor configuration is valid."
 else
     echo "❌ Supervisor configuration has errors!"
@@ -210,12 +211,17 @@ done
 echo ""
 echo "=== Step 3: Starting Supervisor ==="
 
-# 既存のsupervisordプロセスをチェック
+# 既存のsupervisordプロセスとソケットファイルをクリーンアップ
+echo "Cleaning up any existing Supervisor processes and files..."
 if pgrep -f supervisord > /dev/null; then
     echo "⚠️  Supervisor is already running. Stopping existing process..."
     pkill -f supervisord || true
-    sleep 2
+    sleep 3
 fi
+
+# ソケットファイルとPIDファイルをクリーンアップ
+rm -f /var/run/supervisor.sock /var/run/supervisord.pid
+echo "✓ Cleaned up existing Supervisor files."
 
 # 必要なディレクトリとファイルの準備
 echo "Preparing directories and files for Supervisor..."
@@ -344,37 +350,50 @@ echo "=== Step 4: Starting Services ==="
 
 # conda環境が正常に作成されているかチェック
 if conda env list | grep -q "$CONDA_ENV_NAME"; then
-    echo "✓ Conda environment '$CONDA_ENV_NAME' verified. Starting services..."
+    echo "✓ Conda environment '$CONDA_ENV_NAME' verified. Starting all services..."
     
-    # Jupyter Lab を起動
-    echo "Starting Jupyter Lab..."
-    supervisorctl -c "$SUPERVISOR_CONFIG" start jupyter
-    if [ $? -eq 0 ]; then
-        echo "✓ Jupyter Lab started successfully."
+    # すべてのサービスを一括起動
+    echo "Starting all services..."
+    supervisorctl -c "$SUPERVISOR_CONFIG" start all
+    
+    # 個別サービスの起動状況を確認
+    sleep 3
+    echo ""
+    echo "Checking individual service status:"
+    
+    # Jupyter Lab の状態確認
+    if supervisorctl -c "$SUPERVISOR_CONFIG" status jupyter | grep -q "RUNNING"; then
+        echo "✓ Jupyter Lab is running."
     else
-        echo "⚠️  Failed to start Jupyter Lab."
+        echo "⚠️  Jupyter Lab failed to start. Attempting manual start..."
+        supervisorctl -c "$SUPERVISOR_CONFIG" start jupyter
     fi
     
-    # TensorBoard を起動（環境変数でオンの場合）
+    # TensorBoard の状態確認（環境変数でオンの場合）
     if [ "${TENSORBOARD_AUTOSTART:-true}" = "true" ]; then
-        echo "Starting TensorBoard..."
-        supervisorctl -c "$SUPERVISOR_CONFIG" start tensorboard
-        if [ $? -eq 0 ]; then
-            echo "✓ TensorBoard started successfully."
+        if supervisorctl -c "$SUPERVISOR_CONFIG" status tensorboard | grep -q "RUNNING"; then
+            echo "✓ TensorBoard is running."
         else
-            echo "⚠️  Failed to start TensorBoard."
+            echo "⚠️  TensorBoard failed to start. Attempting manual start..."
+            supervisorctl -c "$SUPERVISOR_CONFIG" start tensorboard
         fi
     else
         echo "⏭️  TensorBoard autostart is disabled."
     fi
     
-    # Infinite Browser を起動
-    echo "Starting Infinite Browser..."
-    supervisorctl -c "$SUPERVISOR_CONFIG" start infinite-browser
-    if [ $? -eq 0 ]; then
-        echo "✓ Infinite Browser started successfully."
+    # Infinite Browser の状態確認
+    if supervisorctl -c "$SUPERVISOR_CONFIG" status infinite-browser | grep -q "RUNNING"; then
+        echo "✓ Infinite Browser is running."
     else
-        echo "⚠️  Failed to start Infinite Browser."
+        echo "⚠️  Infinite Browser failed to start. Attempting manual start..."
+        supervisorctl -c "$SUPERVISOR_CONFIG" start infinite-browser
+    fi
+    
+    # File Browser の状態確認（autostartがtrueなので既に起動しているはず）
+    if supervisorctl -c "$SUPERVISOR_CONFIG" status filebrowser | grep -q "RUNNING"; then
+        echo "✓ File Browser is running."
+    else
+        echo "⚠️  File Browser failed to start. This is unexpected since autostart=true."
     fi
     
 else
