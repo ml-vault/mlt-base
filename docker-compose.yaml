@@ -27,6 +27,9 @@ services:
     volumes:
       ## Workspace
       - ./workspace:/workspace:rshared
+      ## Conda environments and package cache
+      - conda-envs:/opt/miniconda/envs
+      - conda-pkgs:/opt/miniconda/pkgs
       
     ports:
         # Jupyter Lab
@@ -50,3 +53,7 @@ services:
         # CUDA環境変数
         - NVIDIA_VISIBLE_DEVICES=all
         - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+
+volumes:
+  conda-envs:
+  conda-pkgs:

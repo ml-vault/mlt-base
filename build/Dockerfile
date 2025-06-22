@@ -27,23 +27,11 @@ RUN if [ ! -d "$CONDA_DIR" ]; then \
         conda clean -afy; \
     fi
 
-# diffusion-pipe conda環境の作成
-RUN conda create -n diffusion-pipe python=3.12 -y && \
-    conda clean -afy
-
-# diffusion-pipe環境に必要なパッケージをインストール
-RUN /bin/bash -c "source $CONDA_DIR/bin/activate diffusion-pipe && \
-    pip install --no-cache-dir \
-        jupyter \
-        jupyterlab \
-        notebook \
-        matplotlib \
-        seaborn \
-        pandas \
-        scikit-learn \
-        plotly \
-        tensorboard \
-        tensorflow-tensorboard-plugin-wit"
+# 基本的なPythonパッケージをベース環境にインストール（フォールバック用）
+RUN pip install --no-cache-dir \
+    jupyter \
+    jupyterlab \
+    notebook
 
 # File Browserのインストール
 RUN filemanager_os="linux" && \
@@ -57,14 +45,10 @@ RUN filemanager_os="linux" && \
     mv "/tmp/filebrowser" "/usr/local/bin/filebrowser" && \
     rm "/tmp/${filemanager_file}"
 
-# diffusion-pipe環境をデフォルトに設定
-ENV CONDA_DEFAULT_ENV=diffusion-pipe
-ENV PATH=$CONDA_DIR/envs/diffusion-pipe/bin:$PATH
-
-# Infinite Image Browsing のインストール
+# Infinite Image Browsing のインストール（ベース環境に）
 RUN git clone https://github.com/ml-vault/sd-webui-infinite-image-browsing.git /opt/infinite-browser && \
     cd /opt/infinite-browser && \
-    /bin/bash -c "source $CONDA_DIR/bin/activate diffusion-pipe && pip install --no-cache-dir -r requirements.txt"
+    pip install --no-cache-dir -r requirements.txt
 
 # 作業ディレクトリの設定
 WORKDIR /workspace
@@ -75,10 +59,11 @@ EXPOSE 8888 6006 8080 8188
 # Supervisorの設定ディレクトリ作成
 RUN mkdir -p /etc/supervisor/conf.d
 
-# Supervisorの設定ファイルとTensorBoard起動スクリプトをコピー
+# Supervisorの設定ファイルとスクリプトをコピー
 COPY supervisord.ini /etc/supervisor/conf.d/supervisord.ini
 COPY start-tensorboard.sh /usr/local/bin/start-tensorboard.sh
-RUN chmod +x /usr/local/bin/start-tensorboard.sh
+COPY init-conda-env.sh /usr/local/bin/init-conda-env.sh
+RUN chmod +x /usr/local/bin/start-tensorboard.sh /usr/local/bin/init-conda-env.sh
 
 # 環境変数の設定
 ENV WORKSPACE=/workspace

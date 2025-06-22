@@ -1,102 +1,87 @@
-# ComfyUI with Conda Support
+# Conda Environment Usage
 
-このDockerイメージは、従来のPython仮想環境に加えてCondaもサポートしています。
+このDockerイメージは、`diffusion-pipe` conda環境を使用してJupyterやその他のサービスを実行します。
 
-## 利用可能な環境
+## 特徴
 
-### 従来のPython仮想環境
-- `comfyui` - ComfyUI用の仮想環境
-- `api` - API Wrapper用の仮想環境  
-- `infinite-browser` - Infinite Browser用の仮想環境
+- **永続化**: conda環境とパッケージキャッシュはDockerボリュームに保存され、コンテナを再起動しても保持されます
+- **ランタイム作成**: conda環境は初回起動時に自動的に作成されます
+- **Python 3.12**: 最新のPython 3.12を使用
 
-### Conda環境
-- `comfyui` - ComfyUI用のConda環境
-- `api` - API Wrapper用のConda環境
-- `infinite-browser` - Infinite Browser用のConda環境
+## 自動インストールされるパッケージ
 
-## Conda環境の使用方法
+初回起動時に以下のパッケージが`diffusion-pipe`環境にインストールされます：
 
-### 1. Conda環境の確認
-```bash
-conda env list
+- jupyter, jupyterlab, notebook
+- matplotlib, seaborn, pandas, scikit-learn, plotly
+- tensorboard, tensorflow-tensorboard-plugin-wit
+- infinite-browser の依存関係
+
+## ボリューム構成
+
+```yaml
+volumes:
+  - conda-envs:/opt/miniconda/envs    # conda環境
+  - conda-pkgs:/opt/miniconda/pkgs    # パッケージキャッシュ
 ```
 
-### 2. Conda環境のアクティベート
-```bash
-# ヘルパースクリプトを使用
-source /opt/ai-dock/bin/conda-activate.sh comfyui
+## 起動順序
 
-# または直接condaコマンドを使用
-conda activate comfyui
+1. `conda-init`: conda環境の作成・確認 (priority: 100)
+2. `jupyter`: Jupyter Lab起動 (priority: 200)
+3. `tensorboard`: TensorBoard起動 (priority: 300)
+4. `filebrowser`: File Browser起動 (priority: 400)
+5. `infinite-browser`: Infinite Browser起動 (priority: 500)
+
+## 手動でconda環境を使用する場合
+
+コンテナ内で直接conda環境を使用したい場合：
+
+```bash
+# コンテナに入る
+docker-compose exec simple-ml bash
+
+# conda環境をアクティベート
+source /opt/miniconda/bin/activate diffusion-pipe
+
+# パッケージの追加インストール
+pip install your-package
+
+# または conda でインストール
+conda install your-package
 ```
 
-### 3. ComfyUIをConda環境で実行
+## ログの確認
+
+各サービスのログは以下で確認できます：
+
 ```bash
-# Supervisorを使用してConda環境でComfyUIを起動
-supervisorctl start comfyui-conda
+# conda環境初期化ログ
+docker-compose exec simple-ml cat /var/log/conda-init.log
 
-# または手動で起動
-conda activate comfyui
-cd /opt/ComfyUI
-python main.py --port 8188
+# Jupyterログ
+docker-compose exec simple-ml cat /var/log/jupyter.log
+
+# TensorBoardログ
+docker-compose exec simple-ml cat /var/log/tensorboard.log
 ```
-
-## 環境の切り替え
-
-### 従来の仮想環境を使用する場合
-```bash
-supervisorctl start comfyui
-```
-
-### Conda環境を使用する場合
-```bash
-supervisorctl start comfyui-conda
-```
-
-## パッケージの管理
-
-### Conda環境でのパッケージインストール
-```bash
-conda activate comfyui
-pip install package_name
-# または
-conda install package_name
-```
-
-### 従来の仮想環境でのパッケージインストール
-```bash
-source /opt/venvs/comfyui/bin/activate
-pip install package_name
-```
-
-## 環境変数
-
-以下の環境変数が設定されています：
-
-- `CONDA_DIR=/opt/miniconda` - Condaのインストールディレクトリ
-- `COMFYUI_CONDA_ENV=comfyui` - ComfyUI用のConda環境名
-- `API_CONDA_ENV=api` - API用のConda環境名
-- `INFINITE_BROWSER_CONDA_ENV=infinite-browser` - Infinite Browser用のConda環境名
-
-## 注意事項
-
-1. 従来の仮想環境とConda環境は独立しています
-2. 同時に両方のComfyUIサービス（`comfyui`と`comfyui-conda`）を起動しないでください
-3. Conda環境は`/opt/miniconda`にインストールされています
-4. 各環境には同じパッケージがインストールされていますが、独立して管理されます
 
 ## トラブルシューティング
 
-### Conda環境が見つからない場合
-```bash
-export PATH="/opt/miniconda/bin:$PATH"
-source /opt/miniconda/etc/profile.d/conda.sh
-```
+### conda環境が作成されない場合
 
-### 環境の再作成
+1. ログを確認：
+   ```bash
+   docker-compose exec simple-ml cat /var/log/conda-init.log
+   ```
+
+2. 手動で環境を再作成：
+   ```bash
+   docker-compose exec simple-ml /usr/local/bin/init-conda-env.sh
+   ```
+
+### パッケージが見つからない場合
+
+conda環境がアクティブになっているか確認：
 ```bash
-conda env remove -n comfyui
-conda create -n comfyui python=3.10 -y
-conda activate comfyui
-cd /opt/ComfyUI
-pip install -r requirements.txt
+docker-compose exec simple-ml bash -c "source /opt/miniconda/bin/activate diffusion-pipe && python -c 'import sys; print(sys.executable)'"
