@@ -6,10 +6,11 @@
 
 - **Conda**: Python環境管理
 - **Jupyter Lab**: インタラクティブな開発環境
-- **Infinite Browser**: ブラウザベースのツール
+- **Infinite Browser**: 画像ブラウジングツール
 - **File Browser**: ファイル管理インターフェース
 - **TensorBoard**: 機械学習の可視化ツール
 - **Python Environment**: 最適化されたPython環境
+- **ML Libraries**: matplotlib, seaborn, pandas, scikit-learn, plotly
 
 ## 特徴
 
@@ -57,7 +58,7 @@ docker run -d \
 | Jupyter Lab | 8888 | http://localhost:8888 | インタラクティブな開発環境 |
 | TensorBoard | 6006 | http://localhost:6006 | 機械学習の可視化 |
 | File Browser | 8080 | http://localhost:8080 | ファイル管理 |
-| Infinite Browser | 8188 | http://localhost:8188 | ブラウザベースのツール |
+| Infinite Browser | 8188 | http://localhost:8188 | 画像ブラウジングツール |
 
 ## 環境変数
 

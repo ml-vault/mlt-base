@@ -10,7 +10,7 @@ env:
   BUILDX_NO_DEFAULT_ATTESTATIONS: 1
 
 jobs:
-  simple-ml:
+  nvidia-base:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -57,11 +57,11 @@ jobs:
             img_path_ghcr="ghcr.io/${{ env.REPO_NAMESPACE }}/${{ env.REPO_NAME }}"
             img_path_dhub="${{ vars.DOCKERHUB_USER }}/${{ env.REPO_NAME }}"
 
-            base_tag="simple-ml-pytorch2.8-cuda12.8-${{ env.UBUNTU_VERSION }}"
+            base_tag="nvidia-base-pytorch2.8-cuda12.8-${{ env.UBUNTU_VERSION }}"
 
             if [[ ${{ matrix.build.latest }} == "true" ]]; then
                 echo "Marking latest"
-                TAGS="${img_path_ghcr}:${base_tag}, ${img_path_ghcr}:latest"
+                TAGS="${img_path_ghcr}:${base_tag}, ${img_path_ghcr}:latest, ${img_path_ghcr}:latest-cuda"
                 TAGS="${TAGS}, ${img_path_dhub}:${base_tag}, ${img_path_dhub}:latest"
             else
                 TAGS="${img_path_ghcr}:${base_tag}, ${img_path_dhub}:${base_tag}"

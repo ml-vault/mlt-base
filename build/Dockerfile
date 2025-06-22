@@ -29,14 +29,33 @@ RUN if [ ! -d "$CONDA_DIR" ]; then \
 RUN pip install --no-cache-dir \
     jupyter \
     jupyterlab \
-    tensorboard \
     notebook
 
 # File Browserのインストール
-RUN curl -fsSL https://raw.githubusercontent.com/filebrowser/get/master/get.sh | bash
+RUN filemanager_os="linux" && \
+    filemanager_arch="amd64" && \
+    filemanager_file="${filemanager_os}-${filemanager_arch}-filebrowser.tar.gz" && \
+    filemanager_tag="$(curl -fsSL https://api.github.com/repos/filebrowser/filebrowser/releases/latest | grep -o '"tag_name": ".*"' | sed 's/"//g' | sed 's/tag_name: //g')" && \
+    filemanager_url="https://github.com/filebrowser/filebrowser/releases/download/${filemanager_tag}/${filemanager_file}" && \
+    curl -fsSL "${filemanager_url}" > "/tmp/${filemanager_file}" && \
+    tar -xzf "/tmp/${filemanager_file}" -C "/tmp/" "filebrowser" && \
+    chmod +x "/tmp/filebrowser" && \
+    mv "/tmp/filebrowser" "/usr/local/bin/filebrowser" && \
+    rm "/tmp/${filemanager_file}"
 
-# Infinite Browserのインストール
-RUN pip install --no-cache-dir infinite-browser
+# 追加の有用なパッケージのインストール
+RUN pip install --no-cache-dir \
+    matplotlib \
+    seaborn \
+    pandas \
+    scikit-learn \
+    plotly \
+    tensorboard
+
+# Infinite Image Browsing のインストール
+RUN git clone https://github.com/ml-vault/sd-webui-infinite-image-browsing.git /opt/infinite-browser && \
+    cd /opt/infinite-browser && \
+    pip install --no-cache-dir -r requirements.txt
 
 # 作業ディレクトリの設定
 WORKDIR /workspace
@@ -77,12 +96,13 @@ stdout_logfile=/var/log/filebrowser.log\n\
 stderr_logfile=/var/log/filebrowser.log\n\
 \n\
 [program:infinite-browser]\n\
-command=infinite-browser --host=0.0.0.0 --port=8188\n\
-directory=/workspace\n\
+command=python app.py --host=0.0.0.0 --port=8188\n\
+directory=/opt/infinite-browser\n\
 autostart=true\n\
 autorestart=true\n\
 stdout_logfile=/var/log/infinite-browser.log\n\
 stderr_logfile=/var/log/infinite-browser.log\n\
+\n\
 ' > /etc/supervisor/conf.d/supervisord.conf
 
 # 環境変数の設定
