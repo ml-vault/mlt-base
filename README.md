@@ -121,6 +121,36 @@ tail -f /var/log/filebrowser.log
 tail -f /var/log/infinite-browser.log
 ```
 
+### TensorBoardが起動しない場合
+
+TensorBoardが繰り返し終了する場合は、以下を確認してください：
+
+1. **ログディレクトリの確認**
+   ```bash
+   # ログディレクトリが存在するか確認
+   ls -la /workspace/logs/
+   
+   # ディレクトリが空の場合、ダミーファイルを作成
+   echo "dummy log" > /workspace/logs/dummy.log
+   ```
+
+2. **TensorBoardの手動起動テスト**
+   ```bash
+   # コンテナ内でTensorBoardを手動起動
+   tensorboard --logdir=/workspace/logs --host=0.0.0.0 --port=6006
+   ```
+
+3. **Supervisorでサービスを再起動**
+   ```bash
+   supervisorctl restart tensorboard
+   ```
+
+4. **権限の確認**
+   ```bash
+   # ログディレクトリの権限を確認・修正
+   chmod -R 755 /workspace/logs
+   ```
+
 ## ライセンス
 
 このプロジェクトはMITライセンスの下で公開されています。

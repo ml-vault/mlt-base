@@ -66,8 +66,10 @@ EXPOSE 8888 6006 8080 8188
 # Supervisorの設定ディレクトリ作成
 RUN mkdir -p /etc/supervisor/conf.d
 
-# Supervisorの設定ファイルをコピー
+# Supervisorの設定ファイルとTensorBoard起動スクリプトをコピー
 COPY supervisord.ini /etc/supervisor/conf.d/supervisord.ini
+COPY start-tensorboard.sh /usr/local/bin/start-tensorboard.sh
+RUN chmod +x /usr/local/bin/start-tensorboard.sh
 
 # 環境変数の設定
 ENV WORKSPACE=/workspace
@@ -76,8 +78,10 @@ ENV TENSORBOARD_PORT=6006
 ENV FILEBROWSER_PORT=8080
 ENV INFINITE_BROWSER_PORT=8188
 
-# ワークスペースディレクトリの作成
-RUN mkdir -p /workspace/logs
+# ワークスペースディレクトリの作成とTensorBoard用ダミーログファイルの作成
+RUN mkdir -p /workspace/logs && \
+    echo "TensorBoard dummy log file - $(date)" > /workspace/logs/dummy.log && \
+    chmod -R 755 /workspace/logs
 
 # 起動コマンド
 CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.ini"]
