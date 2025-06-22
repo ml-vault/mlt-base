@@ -21,9 +21,13 @@
 
 ```yaml
 volumes:
-  - conda-envs:/opt/miniconda/envs    # conda環境
-  - conda-pkgs:/opt/miniconda/pkgs    # パッケージキャッシュ
+  - ./workspace/conda-envs:/opt/miniconda/envs    # conda環境
+  - ./workspace/conda-pkgs:/opt/miniconda/pkgs    # パッケージキャッシュ
 ```
+
+conda環境とパッケージキャッシュは`workspace`ディレクトリ内に保存されます：
+- `workspace/conda-envs/` - conda環境ファイル
+- `workspace/conda-pkgs/` - パッケージキャッシュ
 
 ## 起動順序
 
@@ -49,6 +53,18 @@ pip install your-package
 
 # または conda でインストール
 conda install your-package
+```
+
+## ファイル構成
+
+起動後、以下のディレクトリ構成になります：
+
+```
+workspace/
+├── conda-envs/
+│   └── diffusion-pipe/     # conda環境ファイル
+├── conda-pkgs/             # パッケージキャッシュ
+└── logs/                   # TensorBoardログなど
 ```
 
 ## ログの確認

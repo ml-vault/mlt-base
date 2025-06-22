@@ -8,6 +8,13 @@ echo "=== Conda Environment Initialization ==="
 echo "Date: $(date)"
 echo "Environment: $CONDA_ENV_NAME"
 
+# workspace内のcondaディレクトリを作成（存在しない場合）
+echo "Ensuring conda directories exist in workspace..."
+mkdir -p /workspace/conda-envs
+mkdir -p /workspace/conda-pkgs
+chmod 755 /workspace/conda-envs /workspace/conda-pkgs
+echo "Conda directories created/verified in workspace."
+
 # conda環境が存在するかチェック
 if conda env list | grep -q "^$CONDA_ENV_NAME "; then
     echo "Conda environment '$CONDA_ENV_NAME' already exists."
