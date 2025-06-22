@@ -31,7 +31,13 @@ RUN if [ ! -d "$CONDA_DIR" ]; then \
 RUN pip install --no-cache-dir \
     jupyter \
     jupyterlab \
-    notebook
+    notebook \
+    tensorboard \
+    matplotlib \
+    seaborn \
+    pandas \
+    scikit-learn \
+    plotly
 
 # File Browserのインストール
 RUN filemanager_os="linux" && \
@@ -63,7 +69,8 @@ RUN mkdir -p /etc/supervisor/conf.d
 COPY supervisord.ini /etc/supervisor/conf.d/supervisord.ini
 COPY start-tensorboard.sh /usr/local/bin/start-tensorboard.sh
 COPY init-conda-env.sh /usr/local/bin/init-conda-env.sh
-RUN chmod +x /usr/local/bin/start-tensorboard.sh /usr/local/bin/init-conda-env.sh
+COPY start-services.sh /usr/local/bin/start-services.sh
+RUN chmod +x /usr/local/bin/start-tensorboard.sh /usr/local/bin/init-conda-env.sh /usr/local/bin/start-services.sh
 
 # 環境変数の設定
 ENV WORKSPACE=/workspace

@@ -55,3 +55,7 @@ else
 fi
 
 echo "Conda environment initialization completed."
+
+# サービス起動スクリプトを実行
+echo "Starting dependent services..."
+/usr/local/bin/start-services.sh &

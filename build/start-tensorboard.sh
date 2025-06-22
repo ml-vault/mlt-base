@@ -1,7 +1,11 @@
 #!/bin/bash
 
-# conda環境をアクティベート
-source /opt/miniconda/bin/activate diffusion-pipe
+# conda環境をアクティベート（フォールバック付き）
+if [ -f "/opt/miniconda/bin/activate" ]; then
+    source /opt/miniconda/bin/activate diffusion-pipe
+else
+    echo "Warning: Miniconda not found, using system Python"
+fi
 
 # デバッグ情報を出力
 echo "=== TensorBoard Startup Debug ==="
@@ -9,7 +13,7 @@ echo "Date: $(date)"
 echo "User: $(whoami)"
 echo "Working directory: $(pwd)"
 echo "Active conda environment: $CONDA_DEFAULT_ENV"
-echo "Python version: $(python --version)"
+echo "Python version: $(python --version 2>/dev/null || echo 'Python not found')"
 echo "TensorBoard version: $(python -c 'import tensorboard; print(tensorboard.__version__)' 2>/dev/null || echo 'Not found')"
 
 # TensorBoardログディレクトリの確認と作成
@@ -46,9 +50,17 @@ env | grep -E "(TENSOR|LOG|WORKSPACE)" || echo "No relevant environment variable
 
 echo "Starting TensorBoard with logdir: $LOG_DIR"
 
-# 最初に基本的なTensorBoardコマンドを試す
-echo "Attempting basic TensorBoard startup..."
-echo "Command: tensorboard --logdir=$LOG_DIR --host=0.0.0.0 --port=6006"
-
-# TensorBoardを起動（最小限のオプションで）
-exec tensorboard --logdir="$LOG_DIR" --host=0.0.0.0 --port=6006 2>&1
+# TensorBoardコマンドの存在確認
+if ! command -v tensorboard &> /dev/null; then
+    echo "ERROR: tensorboard command not found. Trying with python -m tensorboard..."
+    if python -c "import tensorboard" 2>/dev/null; then
+        echo "Using python -m tensorboard"
+        exec python -m tensorboard.main --logdir="$LOG_DIR" --host=0.0.0.0 --port=6006 2>&1
+    else
+        echo "ERROR: TensorBoard not available. Exiting."
+        exit 127
+    fi
+else
+    echo "Command: tensorboard --logdir=$LOG_DIR --host=0.0.0.0 --port=6006"
+    exec tensorboard --logdir="$LOG_DIR" --host=0.0.0.0 --port=6006 2>&1
+fi
