@@ -19,8 +19,8 @@ echo "Conda directories created/verified in workspace."
 if conda env list | grep -q "^$CONDA_ENV_NAME "; then
     echo "Conda environment '$CONDA_ENV_NAME' already exists."
 else
-    echo "Creating conda environment '$CONDA_ENV_NAME' with Python 3.12..."
-    conda create -n "$CONDA_ENV_NAME" python=3.12 -y
+    echo "Creating conda environment '$CONDA_ENV_NAME' with Python 3.11..."
+    conda create -n "$CONDA_ENV_NAME" python=3.11 -y
     
     if [ $? -eq 0 ]; then
         echo "Conda environment created successfully."
