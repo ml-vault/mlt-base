@@ -70,6 +70,7 @@ docker run -d \
 | `FILEBROWSER_PORT` | `8080` | File Browserのポート |
 | `INFINITE_BROWSER_PORT` | `8188` | Infinite Browserのポート |
 | `TENSORBOARD_LOG_DIR` | `/workspace/logs` | TensorBoardのログディレクトリ |
+| `TENSORBOARD_AUTOSTART` | `true` | TensorBoardの自動起動（true/false） |
 
 ## ディレクトリ構造
 
@@ -125,7 +126,20 @@ tail -f /var/log/infinite-browser.log
 
 TensorBoardが繰り返し終了する場合は、以下を確認してください：
 
-1. **ログディレクトリの確認**
+1. **詳細なログの確認**
+   ```bash
+   # TensorBoardの詳細ログを確認
+   tail -f /var/log/tensorboard.log
+   ```
+
+2. **TensorBoardを一時的に無効化**
+   ```bash
+   # docker-compose.yamlまたは環境変数で無効化
+   export TENSORBOARD_AUTOSTART=false
+   docker-compose up --build
+   ```
+
+3. **ログディレクトリの確認**
    ```bash
    # ログディレクトリが存在するか確認
    ls -la /workspace/logs/
@@ -134,18 +148,18 @@ TensorBoardが繰り返し終了する場合は、以下を確認してくださ
    echo "dummy log" > /workspace/logs/dummy.log
    ```
 
-2. **TensorBoardの手動起動テスト**
+4. **TensorBoardの手動起動テスト**
    ```bash
    # コンテナ内でTensorBoardを手動起動
    tensorboard --logdir=/workspace/logs --host=0.0.0.0 --port=6006
    ```
 
-3. **Supervisorでサービスを再起動**
+5. **Supervisorでサービスを再起動**
    ```bash
    supervisorctl restart tensorboard
    ```
 
-4. **権限の確認**
+6. **権限の確認**
    ```bash
    # ログディレクトリの権限を確認・修正
    chmod -R 755 /workspace/logs

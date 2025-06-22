@@ -49,8 +49,10 @@ RUN pip install --no-cache-dir \
     seaborn \
     pandas \
     scikit-learn \
-    plotly \
-    tensorboard
+    plotly
+
+# TensorBoardを個別にインストール（依存関係の問題を回避）
+RUN pip install --no-cache-dir --upgrade tensorboard tensorflow-tensorboard-plugin-wit
 
 # Infinite Image Browsing のインストール
 RUN git clone https://github.com/ml-vault/sd-webui-infinite-image-browsing.git /opt/infinite-browser && \
@@ -77,6 +79,7 @@ ENV JUPYTER_PORT=8888
 ENV TENSORBOARD_PORT=6006
 ENV FILEBROWSER_PORT=8080
 ENV INFINITE_BROWSER_PORT=8188
+ENV TENSORBOARD_AUTOSTART=true
 
 # ワークスペースディレクトリの作成とTensorBoard用ダミーログファイルの作成
 RUN mkdir -p /workspace/logs && \
