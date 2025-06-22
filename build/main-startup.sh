@@ -24,6 +24,25 @@ echo "=============================================="
 echo ""
 echo "=== Step 1: Conda Environment Initialization ==="
 
+# Condaの初期化
+echo "Initializing conda for bash shell..."
+conda init bash
+if [ $? -eq 0 ]; then
+    echo "✓ Conda initialized for bash shell."
+else
+    echo "⚠️  Conda init failed, but continuing..."
+fi
+
+# bashrcを読み込んでconda設定を有効化
+echo "Loading conda configuration..."
+source ~/.bashrc 2>/dev/null || source /root/.bashrc 2>/dev/null || echo "⚠️  bashrc not found, using direct conda path"
+
+# condaコマンドが利用可能かチェック
+if ! command -v conda &> /dev/null; then
+    echo "⚠️  conda command not found in PATH, using direct path"
+    export PATH="$CONDA_DIR/bin:$PATH"
+fi
+
 # workspace内のcondaディレクトリを作成（存在しない場合）
 echo "Ensuring conda directories exist in workspace..."
 mkdir -p /workspace/conda-envs
@@ -41,9 +60,18 @@ else
     if [ $? -eq 0 ]; then
         echo "✓ Conda environment created successfully."
         
+        # conda環境をアクティベート
+        echo "Activating conda environment '$CONDA_ENV_NAME'..."
+        conda activate "$CONDA_ENV_NAME"
+        if [ $? -eq 0 ]; then
+            echo "✓ Conda environment '$CONDA_ENV_NAME' activated."
+        else
+            echo "⚠️  Failed to activate conda environment, using source method..."
+            source "$CONDA_DIR/bin/activate" "$CONDA_ENV_NAME"
+        fi
+        
         # 必要なパッケージをインストール
         echo "Installing packages in '$CONDA_ENV_NAME' environment..."
-        source "$CONDA_DIR/bin/activate" "$CONDA_ENV_NAME"
         
         pip install --no-cache-dir \
             jupyter \
@@ -67,6 +95,18 @@ else
     else
         echo "❌ Failed to create conda environment."
         exit 1
+    fi
+else
+    echo "✓ Conda environment '$CONDA_ENV_NAME' already exists."
+    
+    # 既存環境をアクティベート
+    echo "Activating existing conda environment '$CONDA_ENV_NAME'..."
+    conda activate "$CONDA_ENV_NAME"
+    if [ $? -eq 0 ]; then
+        echo "✓ Conda environment '$CONDA_ENV_NAME' activated."
+    else
+        echo "⚠️  Failed to activate conda environment, using source method..."
+        source "$CONDA_DIR/bin/activate" "$CONDA_ENV_NAME"
     fi
 fi
 
@@ -99,22 +139,33 @@ if pgrep -f supervisord > /dev/null; then
     sleep 2
 fi
 
-# Supervisorを起動
-echo "Starting Supervisor daemon..."
+# Supervisorをフォアグラウンドで起動（nodaemon=true設定のため）
+echo "Starting Supervisor daemon in foreground mode..."
 /usr/bin/supervisord -c "$SUPERVISOR_CONFIG" &
 SUPERVISOR_PID=$!
 
 # Supervisorの起動を待機
 echo "Waiting for Supervisor to start..."
-sleep 5
+sleep 3
 
-# Supervisorが正常に起動したかチェック
-if ! pgrep -f supervisord > /dev/null; then
-    echo "❌ Failed to start Supervisor daemon."
-    exit 1
-fi
-
-echo "✓ Supervisor daemon started successfully."
+# supervisorctlが利用可能になるまで待機
+echo "Waiting for supervisorctl to be available..."
+for i in {1..30}; do
+    if supervisorctl -c "$SUPERVISOR_CONFIG" status > /dev/null 2>&1; then
+        echo "✓ supervisorctl is ready."
+        break
+    fi
+    if [ $i -eq 30 ]; then
+        echo "❌ supervisorctl is not available after 30 seconds."
+        echo "Debug: Checking supervisor process..."
+        ps aux | grep supervisord
+        echo "Debug: Checking socket file..."
+        ls -la /var/run/supervisor.sock 2>/dev/null || echo "Socket file not found"
+        exit 1
+    fi
+    echo "Attempt $i/30: supervisorctl not ready yet..."
+    sleep 1
+done
 
 # =============================================================================
 # 4. サービスの段階的起動
@@ -122,27 +173,13 @@ echo "✓ Supervisor daemon started successfully."
 echo ""
 echo "=== Step 4: Starting Services ==="
 
-# supervisorctlが利用可能になるまで待機
-echo "Waiting for supervisorctl to be available..."
-for i in {1..30}; do
-    if supervisorctl status > /dev/null 2>&1; then
-        echo "✓ supervisorctl is ready."
-        break
-    fi
-    if [ $i -eq 30 ]; then
-        echo "❌ supervisorctl is not available after 30 seconds."
-        exit 1
-    fi
-    sleep 1
-done
-
 # conda環境が正常に作成されているかチェック
 if conda env list | grep -q "$CONDA_ENV_NAME"; then
     echo "✓ Conda environment '$CONDA_ENV_NAME' verified. Starting services..."
     
     # Jupyter Lab を起動
     echo "Starting Jupyter Lab..."
-    supervisorctl start jupyter
+    supervisorctl -c "$SUPERVISOR_CONFIG" start jupyter
     if [ $? -eq 0 ]; then
         echo "✓ Jupyter Lab started successfully."
     else
@@ -152,7 +189,7 @@ if conda env list | grep -q "$CONDA_ENV_NAME"; then
     # TensorBoard を起動（環境変数でオンの場合）
     if [ "${TENSORBOARD_AUTOSTART:-true}" = "true" ]; then
         echo "Starting TensorBoard..."
-        supervisorctl start tensorboard
+        supervisorctl -c "$SUPERVISOR_CONFIG" start tensorboard
         if [ $? -eq 0 ]; then
             echo "✓ TensorBoard started successfully."
         else
@@ -164,7 +201,7 @@ if conda env list | grep -q "$CONDA_ENV_NAME"; then
     
     # Infinite Browser を起動
     echo "Starting Infinite Browser..."
-    supervisorctl start infinite-browser
+    supervisorctl -c "$SUPERVISOR_CONFIG" start infinite-browser
     if [ $? -eq 0 ]; then
         echo "✓ Infinite Browser started successfully."
     else
@@ -186,7 +223,7 @@ echo "=============================================="
 echo "Date: $(date)"
 echo ""
 echo "Service Status:"
-supervisorctl status
+supervisorctl -c "$SUPERVISOR_CONFIG" status
 echo ""
 echo "Available Services:"
 echo "  - Jupyter Lab:      http://localhost:8888"
@@ -213,8 +250,8 @@ echo "Press Ctrl+C to stop all services and exit."
 cleanup() {
     echo ""
     echo "=== Shutting down services ==="
-    supervisorctl stop all
-    supervisorctl shutdown
+    supervisorctl -c "$SUPERVISOR_CONFIG" stop all
+    supervisorctl -c "$SUPERVISOR_CONFIG" shutdown
     echo "✓ All services stopped."
     exit 0
 }
