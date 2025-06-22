@@ -151,8 +151,7 @@ else
             pandas \
             scikit-learn \
             plotly \
-            tensorboard \
-            tensorflow-tensorboard-plugin-wit
+            tensorboard
             
         # Infinite Browser の依存関係もインストール
         if [ -f "/opt/infinite-browser/requirements.txt" ]; then
