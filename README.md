@@ -132,14 +132,27 @@ TensorBoardが繰り返し終了する場合は、以下を確認してくださ
    tail -f /var/log/tensorboard.log
    ```
 
-2. **TensorBoardを一時的に無効化**
+2. **Python 3.13のimghdrモジュール問題**
+   
+   Python 3.13では`imghdr`モジュールが削除されており、TensorBoardでエラーが発生する場合があります。
+   この問題は自動的に修正されますが、手動で確認する場合：
+   
+   ```bash
+   # imghdr修正スクリプトを実行
+   python /usr/local/bin/fix-imghdr.py
+   
+   # TensorBoardのインポートテスト
+   python -c "import tensorboard; print('TensorBoard OK')"
+   ```
+
+3. **TensorBoardを一時的に無効化**
    ```bash
    # docker-compose.yamlまたは環境変数で無効化
    export TENSORBOARD_AUTOSTART=false
    docker-compose up --build
    ```
 
-3. **ログディレクトリの確認**
+4. **ログディレクトリの確認**
    ```bash
    # ログディレクトリが存在するか確認
    ls -la /workspace/logs/
@@ -147,6 +160,14 @@ TensorBoardが繰り返し終了する場合は、以下を確認してくださ
    # ディレクトリが空の場合、ダミーファイルを作成
    echo "dummy log" > /workspace/logs/dummy.log
    ```
+
+### 既知の問題と解決策
+
+#### Python 3.13互換性問題
+
+- **問題**: `ModuleNotFoundError: No module named 'imghdr'`
+- **原因**: Python 3.13で`imghdr`モジュールが削除された
+- **解決策**: 自動的に代替実装が作成されます。手動修正が必要な場合は`/usr/local/bin/fix-imghdr.py`を実行してください。
 
 4. **TensorBoardの手動起動テスト**
    ```bash

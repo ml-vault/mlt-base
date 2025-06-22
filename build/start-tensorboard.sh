@@ -1,10 +1,29 @@
 #!/bin/bash
 
 # conda環境をアクティベート（フォールバック付き）
-if [ -f "/opt/miniconda/bin/activate" ]; then
-    source /opt/miniconda/bin/activate diffusion-pipe
+echo "Attempting to activate conda environment..."
+
+# condaの初期化
+if [ -f "/opt/miniconda/etc/profile.d/conda.sh" ]; then
+    source /opt/miniconda/etc/profile.d/conda.sh
+    echo "Conda profile sourced"
 else
-    echo "Warning: Miniconda not found, using system Python"
+    echo "Warning: Conda profile not found"
+fi
+
+# conda環境をアクティベート
+if conda info --envs | grep -q "diffusion-pipe"; then
+    echo "Activating conda environment: diffusion-pipe"
+    conda activate diffusion-pipe
+    if [ "$?" -eq 0 ]; then
+        echo "Successfully activated conda environment"
+    else
+        echo "Failed to activate conda environment, using base environment"
+        conda activate base
+    fi
+else
+    echo "Warning: diffusion-pipe environment not found, using base environment"
+    conda activate base || echo "Failed to activate base environment"
 fi
 
 # デバッグ情報を出力
@@ -13,8 +32,18 @@ echo "Date: $(date)"
 echo "User: $(whoami)"
 echo "Working directory: $(pwd)"
 echo "Active conda environment: $CONDA_DEFAULT_ENV"
+echo "CONDA_PREFIX: $CONDA_PREFIX"
+echo "Python path: $(which python)"
 echo "Python version: $(python --version 2>/dev/null || echo 'Python not found')"
+echo "Python executable: $(python -c 'import sys; print(sys.executable)' 2>/dev/null || echo 'Not found')"
+echo "Python sys.path: $(python -c 'import sys; print(sys.path[:3])' 2>/dev/null || echo 'Not found')"
 echo "TensorBoard version: $(python -c 'import tensorboard; print(tensorboard.__version__)' 2>/dev/null || echo 'Not found')"
+echo "TensorBoard path: $(python -c 'import tensorboard; print(tensorboard.__file__)' 2>/dev/null || echo 'Not found')"
+
+# conda環境の詳細情報
+echo "=== Conda Environment Details ==="
+conda info --envs || echo "conda info failed"
+conda list python || echo "conda list failed"
 
 # TensorBoardログディレクトリの確認と作成
 LOG_DIR="${TENSORBOARD_LOG_DIR:-/workspace/logs}"
