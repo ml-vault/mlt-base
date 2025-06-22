@@ -71,14 +71,14 @@ echo "✓ Conda directories created/verified in workspace."
 if conda env list | grep -q "^$CONDA_ENV_NAME "; then
     echo "✓ Conda environment '$CONDA_ENV_NAME' already exists."
     
-    # 既存環境をアクティベート
+    # 既存環境をアクティベート（sourceコマンドを使用）
     echo "Activating existing conda environment '$CONDA_ENV_NAME'..."
-    conda activate "$CONDA_ENV_NAME"
+    source "$CONDA_DIR/bin/activate" "$CONDA_ENV_NAME"
     if [ $? -eq 0 ]; then
         echo "✓ Conda environment '$CONDA_ENV_NAME' activated."
     else
-        echo "⚠️  Failed to activate conda environment, using source method..."
-        source "$CONDA_DIR/bin/activate" "$CONDA_ENV_NAME"
+        echo "❌ Failed to activate conda environment."
+        exit 1
     fi
 else
     echo "Creating conda environment '$CONDA_ENV_NAME' with Python 3.11..."
@@ -87,14 +87,14 @@ else
     if [ $? -eq 0 ]; then
         echo "✓ Conda environment created successfully."
         
-        # conda環境をアクティベート
+        # conda環境をアクティベート（sourceコマンドを使用）
         echo "Activating conda environment '$CONDA_ENV_NAME'..."
-        conda activate "$CONDA_ENV_NAME"
+        source "$CONDA_DIR/bin/activate" "$CONDA_ENV_NAME"
         if [ $? -eq 0 ]; then
             echo "✓ Conda environment '$CONDA_ENV_NAME' activated."
         else
-            echo "⚠️  Failed to activate conda environment, using source method..."
-            source "$CONDA_DIR/bin/activate" "$CONDA_ENV_NAME"
+            echo "❌ Failed to activate conda environment."
+            exit 1
         fi
         
         # 必要なパッケージをインストール
