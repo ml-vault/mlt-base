@@ -26,7 +26,7 @@ echo "=== Step 1: Conda Environment Initialization ==="
 
 # Condaの初期化
 echo "Initializing conda for bash shell..."
-conda init bash
+$CONDA_DIR/bin/conda init bash
 if [ $? -eq 0 ]; then
     echo "✓ Conda initialized for bash shell."
 else
@@ -35,13 +35,30 @@ fi
 
 # bashrcを読み込んでconda設定を有効化
 echo "Loading conda configuration..."
-source ~/.bashrc 2>/dev/null || source /root/.bashrc 2>/dev/null || echo "⚠️  bashrc not found, using direct conda path"
+if [ -f ~/.bashrc ]; then
+    source ~/.bashrc
+    echo "✓ Loaded ~/.bashrc"
+elif [ -f /root/.bashrc ]; then
+    source /root/.bashrc
+    echo "✓ Loaded /root/.bashrc"
+else
+    echo "⚠️  bashrc not found, setting up conda manually"
+    # conda initの内容を手動で設定
+    export PATH="$CONDA_DIR/bin:$PATH"
+    
+    # conda関数を定義
+    eval "$($CONDA_DIR/bin/conda shell.bash hook)"
+    echo "✓ Conda shell hook initialized"
+fi
 
 # condaコマンドが利用可能かチェック
 if ! command -v conda &> /dev/null; then
     echo "⚠️  conda command not found in PATH, using direct path"
     export PATH="$CONDA_DIR/bin:$PATH"
+    eval "$($CONDA_DIR/bin/conda shell.bash hook)"
 fi
+
+echo "✓ Conda initialization completed"
 
 # workspace内のcondaディレクトリを作成（存在しない場合）
 echo "Ensuring conda directories exist in workspace..."
