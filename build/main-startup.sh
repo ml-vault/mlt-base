@@ -182,6 +182,28 @@ fi
 
 echo "✓ Supervisor configuration file found."
 
+# 設定ファイルの構文チェック
+echo "Validating Supervisor configuration..."
+if /usr/bin/supervisord -c "$SUPERVISOR_CONFIG" -t; then
+    echo "✓ Supervisor configuration is valid."
+else
+    echo "❌ Supervisor configuration has errors!"
+    echo "Debug: Configuration file content:"
+    cat "$SUPERVISOR_CONFIG"
+    exit 1
+fi
+
+# 必要なコマンドの存在確認
+echo "Checking required commands..."
+for cmd in supervisord supervisorctl; do
+    if command -v $cmd >/dev/null 2>&1; then
+        echo "✓ $cmd found: $(which $cmd)"
+    else
+        echo "❌ $cmd not found!"
+        exit 1
+    fi
+done
+
 # =============================================================================
 # 3. Supervisorの起動
 # =============================================================================
@@ -195,31 +217,122 @@ if pgrep -f supervisord > /dev/null; then
     sleep 2
 fi
 
+# 必要なディレクトリとファイルの準備
+echo "Preparing directories and files for Supervisor..."
+mkdir -p /var/run /var/log /workspace
+touch /var/log/supervisord.log
+chmod 755 /var/run /var/log
+chmod 644 /var/log/supervisord.log
+
+# 権限確認
+echo "Debug: Directory permissions:"
+ls -la /var/run/ | head -5
+ls -la /var/log/ | head -5
+
 # Supervisorをフォアグラウンドで起動（nodaemon=true設定のため）
 echo "Starting Supervisor daemon in foreground mode..."
-/usr/bin/supervisord -c "$SUPERVISOR_CONFIG" &
+echo "Debug: Supervisor command: /usr/bin/supervisord -c $SUPERVISOR_CONFIG"
+
+# Supervisorを起動し、出力をキャプチャ
+echo "Debug: Starting supervisord with detailed output..."
+/usr/bin/supervisord -c "$SUPERVISOR_CONFIG" 2>&1 &
 SUPERVISOR_PID=$!
+
+echo "Debug: Supervisor started with PID: $SUPERVISOR_PID"
 
 # Supervisorの起動を待機
 echo "Waiting for Supervisor to start..."
-sleep 3
+sleep 5
+
+# プロセスが実際に動いているか確認
+if kill -0 $SUPERVISOR_PID 2>/dev/null; then
+    echo "✓ Supervisor process is running (PID: $SUPERVISOR_PID)"
+else
+    echo "❌ Supervisor process is not running!"
+    echo ""
+    echo "=== SUPERVISOR STARTUP FAILURE DEBUG ==="
+    echo "1. Process check:"
+    ps aux | grep supervisord | grep -v grep || echo "No supervisord processes found"
+    echo ""
+    echo "2. Supervisor log (last 30 lines):"
+    tail -30 /var/log/supervisord.log 2>/dev/null || echo "No supervisor log found"
+    echo ""
+    echo "3. System error log:"
+    dmesg | tail -10 | grep -i error || echo "No recent system errors"
+    echo ""
+    echo "4. File permissions:"
+    ls -la /var/run/supervisor* 2>/dev/null || echo "No supervisor files in /var/run"
+    ls -la /var/log/supervisor* 2>/dev/null || echo "No supervisor files in /var/log"
+    echo ""
+    echo "5. Disk space:"
+    df -h /var /tmp
+    echo ""
+    echo "6. Memory usage:"
+    free -h
+    echo ""
+    echo "7. Manual supervisor test:"
+    echo "Attempting to start supervisord manually..."
+    /usr/bin/supervisord -c "$SUPERVISOR_CONFIG" -n 2>&1 | head -20 &
+    MANUAL_PID=$!
+    sleep 2
+    kill $MANUAL_PID 2>/dev/null || true
+    echo "=== END DEBUG ==="
+    exit 1
+fi
 
 # supervisorctlが利用可能になるまで待機
 echo "Waiting for supervisorctl to be available..."
+echo "Debug: Initial supervisor process check..."
+ps aux | grep supervisord | grep -v grep
+
+echo "Debug: Checking supervisor socket and config..."
+ls -la /var/run/supervisor.sock 2>/dev/null || echo "Socket file not found at /var/run/supervisor.sock"
+ls -la /tmp/supervisor.sock 2>/dev/null || echo "Socket file not found at /tmp/supervisor.sock"
+echo "Config file: $SUPERVISOR_CONFIG"
+cat "$SUPERVISOR_CONFIG" | head -20
+
 for i in {1..30}; do
+    echo "Attempt $i/30: Testing supervisorctl connection..."
+    
+    # より詳細なデバッグ出力
+    echo "  - Supervisor process status:"
+    ps aux | grep supervisord | grep -v grep || echo "    No supervisord process found"
+    
+    echo "  - Socket file check:"
+    ls -la /var/run/supervisor.sock 2>/dev/null || echo "    /var/run/supervisor.sock not found"
+    ls -la /tmp/supervisor.sock 2>/dev/null || echo "    /tmp/supervisor.sock not found"
+    
+    echo "  - Testing supervisorctl status command:"
+    supervisorctl -c "$SUPERVISOR_CONFIG" status 2>&1 | head -5
+    
     if supervisorctl -c "$SUPERVISOR_CONFIG" status > /dev/null 2>&1; then
         echo "✓ supervisorctl is ready."
         break
     fi
+    
     if [ $i -eq 30 ]; then
         echo "❌ supervisorctl is not available after 30 seconds."
-        echo "Debug: Checking supervisor process..."
+        echo ""
+        echo "=== FINAL DEBUG INFORMATION ==="
+        echo "1. Supervisor processes:"
         ps aux | grep supervisord
-        echo "Debug: Checking socket file..."
-        ls -la /var/run/supervisor.sock 2>/dev/null || echo "Socket file not found"
-        exit 1
+        echo ""
+        echo "2. Socket files:"
+        find /var/run /tmp -name "*supervisor*" 2>/dev/null || echo "No supervisor socket files found"
+        echo ""
+        echo "3. Supervisor config:"
+        cat "$SUPERVISOR_CONFIG"
+        echo ""
+        echo "4. Supervisor logs:"
+        tail -20 /var/log/supervisord.log 2>/dev/null || echo "No supervisor log found"
+        echo ""
+        echo "5. System logs:"
+        dmesg | tail -10
+        echo ""
+        echo "6. Network and ports:"
+        netstat -tlnp | grep -E "(9001|supervisor)" || echo "No supervisor ports found"
     fi
-    echo "Attempt $i/30: supervisorctl not ready yet..."
+    
     sleep 1
 done
 
