@@ -1,57 +1,99 @@
-# For build automation - Allows building from any ai-dock base image
-# Use a *cuda*base* image as default because pytorch brings the libs
-ARG IMAGE_BASE="ghcr.io/ai-dock/python:3.10-v2-cuda-12.1.1-base-22.04"
-FROM ${IMAGE_BASE}
+# RunPod PyTorchベースイメージを使用
+FROM runpod/pytorch:2.8.0-py3.11-cuda12.8.1-cudnn-devel-ubuntu22.04
 
 LABEL org.opencontainers.image.source https://github.com/mlvault/comfyui
-LABEL org.opencontainers.image.description "ComfyUI Stable Diffusion backend and GUI"
+LABEL org.opencontainers.image.description "Simple ML environment with conda, jupyter, infinite-browser, filebrowser, tensorboard"
 LABEL maintainer="Yoonsoo Kim <laptise@live.jp>"
 
-# Conda environment paths
+# 基本パッケージのインストール
+RUN apt-get update && apt-get install -y \
+    wget \
+    curl \
+    git \
+    build-essential \
+    supervisor \
+    nginx \
+    && rm -rf /var/lib/apt/lists/*
+
+# Minicondaのインストール（既存のcondaがある場合はスキップ）
 ENV CONDA_DIR=/opt/miniconda
 ENV PATH=$CONDA_DIR/bin:$PATH
+RUN if [ ! -d "$CONDA_DIR" ]; then \
+        wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O /tmp/miniconda.sh && \
+        bash /tmp/miniconda.sh -b -p $CONDA_DIR && \
+        rm /tmp/miniconda.sh && \
+        conda clean -afy; \
+    fi
 
-# Traditional venv paths (kept for compatibility)
-ENV COMFYUI_VENV=$VENV_DIR/comfyui
-ENV COMFYUI_VENV_PYTHON=$COMFYUI_VENV/bin/python
-ENV COMFYUI_VENV_PIP=$COMFYUI_VENV/bin/pip
+# 必要なPythonパッケージのインストール（PyTorchは既にインストール済み）
+RUN pip install --no-cache-dir \
+    jupyter \
+    jupyterlab \
+    tensorboard \
+    notebook
 
-ENV API_VENV=$VENV_DIR/api
-ENV API_VENV_PYTHON=$API_VENV/bin/python
-ENV API_VENV_PIP=$API_VENV/bin/pip
+# File Browserのインストール
+RUN curl -fsSL https://raw.githubusercontent.com/filebrowser/get/master/get.sh | bash
 
-ENV INFINITE_BROWSER_VENV=$VENV_DIR/ibrowser
-ENV INFINITE_BROWSER_VENV_PYTHON=$INFINITE_BROWSER_VENV/bin/python
-ENV INFINITE_BROWSER_VENV_PIP=$INFINITE_BROWSER_VENV/bin/pip
+# Infinite Browserのインストール
+RUN pip install --no-cache-dir infinite-browser
 
-# Conda environment paths
-ENV COMFYUI_CONDA_ENV=comfyui
-ENV API_CONDA_ENV=api
-ENV INFINITE_BROWSER_CONDA_ENV=infinite-browser
+# 作業ディレクトリの設定
+WORKDIR /workspace
 
-ENV IMAGE_SLUG="comfyui"
-ENV OPT_SYNC=ComfyUI
+# ポートの公開
+EXPOSE 8888 6006 8080 8188
 
-# Prepare environment
-ARG PYTHON_VERSION="3.10"
-ENV PYTHON_VERSION=${PYTHON_VERSION}
-ARG PYTORCH_VERSION="2.4.0"
-ENV PYTORCH_VERSION="${PYTORCH_VERSION}"
-COPY --chown=0:1111 ./COPY_ROOT_0/ /
-ARG IMAGE_BASE
-RUN set -eo pipefail && /opt/ai-dock/bin/build/layer0/init.sh | tee /var/log/build.log
+# Supervisorの設定ディレクトリ作成
+RUN mkdir -p /etc/supervisor/conf.d
 
-RUN echo "bust cache"
-# Install software
-ARG COMFYUI_BUILD_REF
-ENV COMFYUI_BUILD_REF=${COMFYUI_BUILD_REF}
-COPY --chown=0:1111 ./COPY_ROOT_1/ /
-RUN set -eo pipefail && /opt/ai-dock/bin/build/layer1/init.sh | tee -a /var/log/build.log
+# Supervisorの設定ファイル
+RUN echo '[supervisord]\n\
+nodaemon=true\n\
+user=root\n\
+\n\
+[program:jupyter]\n\
+command=jupyter lab --ip=0.0.0.0 --port=8888 --no-browser --allow-root --ServerApp.token="" --ServerApp.password="" --ServerApp.allow_origin="*"\n\
+directory=/workspace\n\
+autostart=true\n\
+autorestart=true\n\
+stdout_logfile=/var/log/jupyter.log\n\
+stderr_logfile=/var/log/jupyter.log\n\
+\n\
+[program:tensorboard]\n\
+command=tensorboard --logdir=/workspace/logs --host=0.0.0.0 --port=6006\n\
+directory=/workspace\n\
+autostart=true\n\
+autorestart=true\n\
+stdout_logfile=/var/log/tensorboard.log\n\
+stderr_logfile=/var/log/tensorboard.log\n\
+\n\
+[program:filebrowser]\n\
+command=filebrowser -a 0.0.0.0 -p 8080 -r /workspace\n\
+directory=/workspace\n\
+autostart=true\n\
+autorestart=true\n\
+stdout_logfile=/var/log/filebrowser.log\n\
+stderr_logfile=/var/log/filebrowser.log\n\
+\n\
+[program:infinite-browser]\n\
+command=infinite-browser --host=0.0.0.0 --port=8188\n\
+directory=/workspace\n\
+autostart=true\n\
+autorestart=true\n\
+stdout_logfile=/var/log/infinite-browser.log\n\
+stderr_logfile=/var/log/infinite-browser.log\n\
+' > /etc/supervisor/conf.d/supervisord.conf
 
-# Copy overrides and models into later layers for fast rebuilds
-COPY --chown=0:1111 ./COPY_ROOT_99/ /
-RUN set -eo pipefail && /opt/ai-dock/bin/build/layer99/init.sh | tee -a /var/log/build.log
-ENV PYTHON_DEFAULT_VENV=comfyui
+# 環境変数の設定
+ENV WORKSPACE=/workspace
+ENV JUPYTER_PORT=8888
+ENV TENSORBOARD_PORT=6006
+ENV FILEBROWSER_PORT=8080
+ENV INFINITE_BROWSER_PORT=8188
 
-# Keep init.sh as-is and place additional logic in /opt/ai-dock/bin/preflight.d
-CMD ["init.sh"]
+# ワークスペースディレクトリの作成
+RUN mkdir -p /workspace/logs
+
+# 起動コマンド
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]

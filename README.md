@@ -1,97 +1,129 @@
-[![Docker Build](https://github.com/ai-dock/comfyui/actions/workflows/docker-build.yml/badge.svg)](https://github.com/ai-dock/comfyui/actions/workflows/docker-build.yml)
+[![Docker Build](https://github.com/mlvault/comfyui/actions/workflows/docker-build.yml/badge.svg)](https://github.com/mlvault/comfyui/actions/workflows/docker-build.yml)
 
-# AI-Dock + ComfyUI Docker Image
+# Simple ML Environment Docker Image
 
-Run [ComfyUI](https://github.com/comfyanonymous/ComfyUI) in a highly-configurable, cloud-first AI-Dock container.
+シンプルなML開発環境を提供するDockerイメージです。以下のコンポーネントが含まれています：
 
->[!NOTE]
->These images do not bundle models or third-party configurations. You should use a [provisioning script](https://github.com/ai-dock/base-image/wiki/4.0-Running-the-Image#provisioning-script) to automatically configure your container. You can find examples, including `SD3` & `FLUX.1` setup, in `config/provisioning`.
+- **Conda**: Python環境管理
+- **Jupyter Lab**: インタラクティブな開発環境
+- **Infinite Browser**: ブラウザベースのツール
+- **File Browser**: ファイル管理インターフェース
+- **TensorBoard**: 機械学習の可視化ツール
+- **Python Environment**: 最適化されたPython環境
 
+## 特徴
 
-## Documentation
+- AI-Dockの複雑さを排除したシンプルな構成
+- 必要最小限のコンポーネントのみを含む
+- 軽量で高速な起動
+- GPU（NVIDIA CUDA）サポート
+- すべてのサービスがSupervisorで管理される
 
-All AI-Dock containers share a common base which is designed to make running on cloud services such as [vast.ai](https://link.ai-dock.org/vast.ai) as straightforward and user friendly as possible.
+## 使用方法
 
-Common features and options are documented in the [base wiki](https://github.com/ai-dock/base-image/wiki) but any additional features unique to this image will be detailed below.
+### Docker Composeを使用
 
-#### Version Tags
+```bash
+# リポジトリをクローン
+git clone https://github.com/mlvault/comfyui.git
+cd comfyui
 
-The `:latest` tag points to `:latest-cuda` and will relate to a stable and tested version.  There may be more recent builds
+# イメージをビルドして起動
+docker-compose up --build
+```
 
-Tags follow these patterns:
+### 直接Dockerを使用
 
-##### _CUDA_
-- `:cuda-[x.x.x-base|runtime]-[ubuntu-version]`
+```bash
+# イメージをビルド
+docker build -t simple-ml ./build
 
-##### _ROCm_
-- `:rocm-[x.x.x-runtime]-[ubuntu-version]`
+# コンテナを起動
+docker run -d \
+  --name simple-ml \
+  --gpus all \
+  -p 8888:8888 \
+  -p 6006:6006 \
+  -p 8080:8080 \
+  -p 8188:8188 \
+  -v $(pwd)/workspace:/workspace \
+  simple-ml
+```
 
-##### _CPU_
-- `:cpu-[ubuntu-version]`
+## アクセス可能なサービス
 
+| サービス | ポート | URL | 説明 |
+|---------|--------|-----|------|
+| Jupyter Lab | 8888 | http://localhost:8888 | インタラクティブな開発環境 |
+| TensorBoard | 6006 | http://localhost:6006 | 機械学習の可視化 |
+| File Browser | 8080 | http://localhost:8080 | ファイル管理 |
+| Infinite Browser | 8188 | http://localhost:8188 | ブラウザベースのツール |
 
-Browse [ghcr.io](https://github.com/ai-dock/comfyui/pkgs/container/comfyui) for an image suitable for your target environment. Alternatively, view a select range of [CUDA](https://hub.docker.com/r/aidockorg/comfyui-cuda) and [ROCm](https://hub.docker.com/r/aidockorg/comfyui-rocm) builds at DockerHub.
+## 環境変数
 
-Supported Platforms: `NVIDIA CUDA`, `AMD ROCm`, `CPU`
+| 変数名 | デフォルト値 | 説明 |
+|--------|-------------|------|
+| `WORKSPACE` | `/workspace` | 作業ディレクトリのパス |
+| `JUPYTER_PORT` | `8888` | Jupyter Labのポート |
+| `TENSORBOARD_PORT` | `6006` | TensorBoardのポート |
+| `FILEBROWSER_PORT` | `8080` | File Browserのポート |
+| `INFINITE_BROWSER_PORT` | `8188` | Infinite Browserのポート |
+| `TENSORBOARD_LOG_DIR` | `/workspace/logs` | TensorBoardのログディレクトリ |
 
-## Additional Environment Variables
+## ディレクトリ構造
 
-| Variable                 | Description |
-| ------------------------ | ----------- |
-| `AUTO_UPDATE`            | Update ComfyUI on startup (default `false`) |
-| `CIVITAI_TOKEN`          | Authenticate download requests from Civitai - Required for gated models |
-| `COMFYUI_ARGS`           | Startup arguments. eg. `--gpu-only --highvram` |
-| `COMFYUI_PORT_HOST`      | ComfyUI interface port (default `8188`) |
-| `COMFYUI_REF`            | Git reference for auto update. Accepts branch, tag or commit hash. Default: latest release |
-| `COMFYUI_URL`            | Override `$DIRECT_ADDRESS:port` with URL for ComfyUI |
-| `HF_TOKEN`               | Authenticate download requests from HuggingFace - Required for gated models (SD3, FLUX, etc.) |
+```
+/workspace/          # メインの作業ディレクトリ
+├── logs/           # TensorBoardログ
+└── ...             # あなたのプロジェクトファイル
+```
 
-See the base environment variables [here](https://github.com/ai-dock/base-image/wiki/2.0-Environment-Variables) for more configuration options.
+## GPU サポート
 
-### Additional Python Environments
+NVIDIA GPUを使用する場合は、以下を確認してください：
 
-| Environment    | Packages |
-| -------------- | ----------------------------------------- |
-| `comfyui`      | ComfyUI and dependencies |
-| `api`          | ComfyUI API wrapper and dependencies |
+1. NVIDIA Dockerランタイムがインストールされている
+2. `docker-compose.yaml`でGPU設定が有効になっている
+3. `--gpus all`フラグを使用してコンテナを起動する
 
+## カスタマイズ
 
-The `comfyui` environment will be activated on shell login.
+### 追加のPythonパッケージをインストール
 
-~~See the base micromamba environments [here](https://github.com/ai-dock/base-image/wiki/1.0-Included-Software#installed-micromamba-environments).~~
+```bash
+# コンテナ内で
+pip install your-package
 
-## Additional Services
+# または、Dockerfileを編集して永続化
+```
 
-The following services will be launched alongside the [default services](https://github.com/ai-dock/base-image/wiki/1.0-Included-Software) provided by the base image.
+### 設定の変更
 
-### ComfyUI
+Supervisorの設定は`/etc/supervisor/conf.d/supervisord.conf`で管理されています。
 
-The service will launch on port `8188` unless you have specified an override with `COMFYUI_PORT_HOST`.
+## トラブルシューティング
 
-You can set startup flags by using variable `COMFYUI_ARGS`.
+### サービスの状態確認
 
-To manage this service you can use `supervisorctl [start|stop|restart] comfyui`.
+```bash
+# コンテナ内で
+supervisorctl status
+```
 
+### ログの確認
 
-### ComfyUI API Wrapper
+```bash
+# 各サービスのログを確認
+tail -f /var/log/jupyter.log
+tail -f /var/log/tensorboard.log
+tail -f /var/log/filebrowser.log
+tail -f /var/log/infinite-browser.log
+```
 
-This service is available on port `8188` and is a work-in-progress to replace previous serverless handlers which have been depreciated; Old Docker images and sources remain available should you need them.
+## ライセンス
 
-You can access the api directly at `/ai-dock/api/` or you can use the Swager/openAPI playground at `/ai-dock/api/docs`.
-
->[!NOTE]
->All services are password protected by default. See the [security](https://github.com/ai-dock/base-image/wiki#security) and [environment variables](https://github.com/ai-dock/base-image/wiki/2.0-Environment-Variables) documentation for more information.
-
-## Pre-Configured Templates
-
-**Vast.​ai**
-
-- [comfyui:latest-cuda](https://link.ai-dock.org/template-vast-comfyui)
-
-- [comfyui:latest-cuda + FLUX.1](https://link.ai-dock.org/template-vast-comfyui-flux)
-
-- [comfyui:latest-rocm](https://link.ai-dock.org/template-vast-comfyui-rocm)
+このプロジェクトはMITライセンスの下で公開されています。
 
 ---
 
-_The author ([@robballantyne](https://github.com/robballantyne)) may be compensated if you sign up to services linked in this document. Testing multiple variants of GPU images in many different environments is both costly and time-consuming; This helps to offset costs_
+_Maintainer: Yoonsoo Kim <laptise@live.jp>_
