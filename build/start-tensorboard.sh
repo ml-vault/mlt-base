@@ -1,10 +1,14 @@
 #!/bin/bash
 
+# conda環境をアクティベート
+source /opt/miniconda/bin/activate diffusion-pipe
+
 # デバッグ情報を出力
 echo "=== TensorBoard Startup Debug ==="
 echo "Date: $(date)"
 echo "User: $(whoami)"
 echo "Working directory: $(pwd)"
+echo "Active conda environment: $CONDA_DEFAULT_ENV"
 echo "Python version: $(python --version)"
 echo "TensorBoard version: $(python -c 'import tensorboard; print(tensorboard.__version__)' 2>/dev/null || echo 'Not found')"
 

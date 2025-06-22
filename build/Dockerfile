@@ -11,6 +11,8 @@ RUN apt-get update && apt-get install -y \
     curl \
     git \
     build-essential \
+    cmake \
+    pkg-config \
     supervisor \
     nginx \
     && rm -rf /var/lib/apt/lists/*
@@ -25,11 +27,23 @@ RUN if [ ! -d "$CONDA_DIR" ]; then \
         conda clean -afy; \
     fi
 
-# 必要なPythonパッケージのインストール（PyTorchは既にインストール済み）
-RUN pip install --no-cache-dir \
-    jupyter \
-    jupyterlab \
-    notebook
+# diffusion-pipe conda環境の作成
+RUN conda create -n diffusion-pipe python=3.12 -y && \
+    conda clean -afy
+
+# diffusion-pipe環境に必要なパッケージをインストール
+RUN /bin/bash -c "source $CONDA_DIR/bin/activate diffusion-pipe && \
+    pip install --no-cache-dir \
+        jupyter \
+        jupyterlab \
+        notebook \
+        matplotlib \
+        seaborn \
+        pandas \
+        scikit-learn \
+        plotly \
+        tensorboard \
+        tensorflow-tensorboard-plugin-wit"
 
 # File Browserのインストール
 RUN filemanager_os="linux" && \
@@ -43,21 +57,14 @@ RUN filemanager_os="linux" && \
     mv "/tmp/filebrowser" "/usr/local/bin/filebrowser" && \
     rm "/tmp/${filemanager_file}"
 
-# 追加の有用なパッケージのインストール
-RUN pip install --no-cache-dir \
-    matplotlib \
-    seaborn \
-    pandas \
-    scikit-learn \
-    plotly
-
-# TensorBoardを個別にインストール（依存関係の問題を回避）
-RUN pip install --no-cache-dir --upgrade tensorboard tensorflow-tensorboard-plugin-wit
+# diffusion-pipe環境をデフォルトに設定
+ENV CONDA_DEFAULT_ENV=diffusion-pipe
+ENV PATH=$CONDA_DIR/envs/diffusion-pipe/bin:$PATH
 
 # Infinite Image Browsing のインストール
 RUN git clone https://github.com/ml-vault/sd-webui-infinite-image-browsing.git /opt/infinite-browser && \
     cd /opt/infinite-browser && \
-    pip install --no-cache-dir -r requirements.txt
+    /bin/bash -c "source $CONDA_DIR/bin/activate diffusion-pipe && pip install --no-cache-dir -r requirements.txt"
 
 # 作業ディレクトリの設定
 WORKDIR /workspace
