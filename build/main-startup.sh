@@ -101,6 +101,22 @@ if conda env list | grep -q "^$CONDA_ENV_NAME "; then
         export PATH="$CONDA_PREFIX/bin:$PATH"
         echo "✓ Environment variables set manually."
     fi
+    
+    # 既存環境でflash-attnがインストールされているかチェック
+    echo "Checking if flash-attn is installed in existing environment..."
+    if pip list | grep -q "^flash-attn "; then
+        echo "✓ flash-attn is already installed."
+    else
+        echo "Installing flash-attn in existing environment..."
+        pip install --no-cache-dir flash-attn
+        
+        if [ $? -eq 0 ]; then
+            echo "✓ flash-attn installed successfully."
+        else
+            echo "⚠️  flash-attn installation failed. This may be due to compilation issues."
+            echo "    flash-attn requires CUDA-compatible GPU and may take time to compile."
+        fi
+    fi
 else
     echo "Creating conda environment '$CONDA_ENV_NAME' with Python 3.11..."
     conda create -n "$CONDA_ENV_NAME" python=3.11 -y
@@ -152,6 +168,17 @@ else
             scikit-learn \
             plotly \
             tensorboard
+        
+        # flash-attnのインストール（GPU環境用）
+        echo "Installing flash-attn for GPU acceleration..."
+        pip install --no-cache-dir flash-attn
+        
+        if [ $? -eq 0 ]; then
+            echo "✓ flash-attn installed successfully."
+        else
+            echo "⚠️  flash-attn installation failed. This may be due to compilation issues."
+            echo "    flash-attn requires CUDA-compatible GPU and may take time to compile."
+        fi
             
         # Infinite Browser の依存関係もインストール
         if [ -f "/opt/infinite-browser/requirements.txt" ]; then
