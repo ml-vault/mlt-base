@@ -68,9 +68,8 @@ RUN mkdir -p /etc/supervisor/conf.d
 # Supervisorの設定ファイルとスクリプトをコピー
 COPY supervisord.ini /etc/supervisor/conf.d/supervisord.ini
 COPY start-tensorboard.sh /usr/local/bin/start-tensorboard.sh
-COPY init-conda-env.sh /usr/local/bin/init-conda-env.sh
-COPY start-services.sh /usr/local/bin/start-services.sh
-RUN chmod +x /usr/local/bin/start-tensorboard.sh /usr/local/bin/init-conda-env.sh /usr/local/bin/start-services.sh
+COPY main-startup.sh /usr/local/bin/main-startup.sh
+RUN chmod +x /usr/local/bin/start-tensorboard.sh /usr/local/bin/main-startup.sh
 
 # 環境変数の設定
 ENV WORKSPACE=/workspace
@@ -85,5 +84,5 @@ RUN mkdir -p /workspace/logs && \
     echo "TensorBoard dummy log file - $(date)" > /workspace/logs/dummy.log && \
     chmod -R 755 /workspace/logs
 
-# 起動コマンド
-CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.ini"]
+# 起動コマンド - 統合起動スクリプトを使用
+CMD ["/usr/local/bin/main-startup.sh"]
