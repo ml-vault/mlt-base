@@ -108,7 +108,7 @@ if conda env list | grep -q "^$CONDA_ENV_NAME "; then
         echo "✓ flash-attn is already installed."
     else
         echo "Installing flash-attn in existing environment..."
-        pip install --no-cache-dir flash-attn
+        pip install --no-cache-dir flash-attn --no-build-isolation
         
         if [ $? -eq 0 ]; then
             echo "✓ flash-attn installed successfully."
@@ -171,7 +171,7 @@ else
         
         # flash-attnのインストール（GPU環境用）
         echo "Installing flash-attn for GPU acceleration..."
-        pip install --no-cache-dir flash-attn
+        pip install --no-cache-dir flash-attn --no-build-isolation
         
         if [ $? -eq 0 ]; then
             echo "✓ flash-attn installed successfully."
